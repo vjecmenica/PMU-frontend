@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "299827740387",
+    "project_id": "pmu-kviz",
+    "storage_bucket": "pmu-kviz.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:299827740387:android:2e79258d78c60263a40fd6",
+        "android_client_info": {
+          "package_name": "com.example.kviz"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyC45sYC8KQi-e-6THORaAVa_WVBCXOYf7I"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
