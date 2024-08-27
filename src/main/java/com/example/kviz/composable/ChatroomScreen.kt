@@ -96,7 +96,8 @@ fun ChatRoomItem(
         Text(text = chatRoom, color = Color.White, fontSize = 18.sp)
         Spacer(modifier = Modifier.weight(1f))
         Button(onClick = {
-            navController.navigate(ChatDest.route)
+//            navController.navigate(ChatDest.route)
+            navController.navigate(ChatDest.createRoute(chatRoom))
         }) {
             Icon(Icons.Filled.KeyboardArrowRight, contentDescription = "Enter")
         }

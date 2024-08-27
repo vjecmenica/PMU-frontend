@@ -1,50 +1,3 @@
-//package com.example.kviz
-//
-//import android.os.Bundle
-//import androidx.activity.ComponentActivity
-//import androidx.activity.compose.setContent
-//import androidx.compose.foundation.layout.fillMaxSize
-//import androidx.compose.material3.MaterialTheme
-//import androidx.compose.material3.Surface
-//import androidx.compose.material3.Text
-//import androidx.compose.runtime.Composable
-//import androidx.compose.ui.Modifier
-//import androidx.compose.ui.tooling.preview.Preview
-//import com.example.kviz.ui.theme.KvizTheme
-//
-//class MainActivity : ComponentActivity() {
-//    override fun onCreate(savedInstanceState: Bundle?) {
-//        super.onCreate(savedInstanceState)
-//        setContent {
-//            KvizTheme {
-//                // A surface container using the 'background' color from the theme
-//                Surface(
-//                    modifier = Modifier.fillMaxSize(),
-//                    color = MaterialTheme.colorScheme.background
-//                ) {
-//                    Greeting("Android")
-//                }
-//            }
-//        }
-//    }
-//}
-//
-//@Composable
-//fun Greeting(name: String, modifier: Modifier = Modifier) {
-//    Text(
-//        text = "Hello $name!",
-//        modifier = modifier
-//    )
-//}
-//
-//@Preview(showBackground = true)
-//@Composable
-//fun GreetingPreview() {
-//    KvizTheme {
-//        Greeting("Android")
-//    }
-//}
-
 package com.example.kviz
 
 //import com.bumptech.glide.Glide
@@ -74,18 +27,22 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.kviz.composable.ChatRoomsScreen
 import com.example.kviz.composable.ChatScreen
 import com.example.kviz.composable.LeaderboardScreen
 import com.example.kviz.composable.QuizScreen
 import com.example.kviz.composable.SignInSignUpScreen
-import com.example.kviz.pozivi.Question.QuestionDto
+import com.example.kviz.pozivi.Question.dtos.QuestionDto
 import com.example.kviz.pozivi.Question.interfacePoziv.QuizApiService
 import com.example.kviz.ui.theme.KvizTheme
+import com.example.vezbazak1.composable.SectionDetailsScreen
+import com.example.vezbazak1.composable.SectionsScreen
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -129,7 +86,7 @@ class MainActivity : ComponentActivity() {
                         bottomBar = {
                             if (    // prikazuje bottomBar samo ako smo na jednom od ova 3 screen-a
                                 currentDestination?.route == ChatRoomsDest.route ||
-                                currentDestination?.route == AddQuestionDest.route ||
+                                currentDestination?.route == SectionsDest.route ||
                                 currentDestination?.route == ProfileDest.route
                             ) {
                                 BottomAppBar(containerColor = Color(0xFFFFB183)) { // Narandzasta boja
@@ -169,17 +126,28 @@ class MainActivity : ComponentActivity() {
                             composable(route = ChatRoomsDest.route) {
                                 ChatRoomsScreen(navController)
                             }
-                            composable(route = AddQuestionDest.route) {
-                                // TODO
+                            composable(route = SectionsDest.route) {
+                                SectionsScreen(navController)
                             }
                             composable(route = ProfileDest.route) {
                                 LeaderboardScreen(navController)
                             }
-                            composable(route = ChatDest.route) {
-                                ChatScreen("vukasin", navController)
+                            composable(
+                                route = ChatDest.route,
+                                arguments = listOf(navArgument("chatName") { type = NavType.StringType })
+                            ) { backStackEntry ->
+                                val chatName = backStackEntry.arguments?.getString("chatName")
+                                ChatScreen(navController = navController, chatRoomName = chatName ?: "")
                             }
                             composable(route = LoginDest.route) {
                                 SignInSignUpScreen(navController)
+                            }
+                            composable(
+                                route = AllQuestionsDest.route,
+                                arguments = listOf(navArgument("sectionId") { type = NavType.StringType })
+                            ) { backStackEntry ->
+                                val sectionId = backStackEntry.arguments?.getString("sectionId")
+                                SectionDetailsScreen(navController = navController, sectionId = sectionId ?: "")
                             }
                         }
                     }

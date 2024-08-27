@@ -4,6 +4,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.Face
+import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.MailOutline
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -30,7 +31,11 @@ object ProfileDest : SnippetDestination {
 
 object ChatDest : SnippetDestination {
     override val icon = Icons.Default.Send
-    override val route = "chat"
+    override val route = "chat/{chatName}"
+
+    fun createRoute(chatName: String): String {
+        return "chat/$chatName"
+    }
 }
 
 object LoginDest : SnippetDestination {
@@ -38,4 +43,23 @@ object LoginDest : SnippetDestination {
     override val route = "login"
 }
 
-val destinations = listOf(ChatRoomsDest, AddQuestionDest, ProfileDest)
+object SectionsDest : SnippetDestination {
+    override val icon = Icons.Default.AccountBox
+    override val route = "sections"
+}
+
+object AllQuestionsDest : SnippetDestination {
+    override val icon = Icons.Default.AccountBox
+    override val route = "all_questions/{sectionId}"
+
+    fun createRoute(sectionId: String): String {
+        return "all_questions/$sectionId"
+    }
+}
+
+object QuizDest : SnippetDestination {
+    override val icon = Icons.Default.Info
+    override val route = "quiz"
+}
+
+val destinations = listOf(ChatRoomsDest, SectionsDest, ProfileDest)

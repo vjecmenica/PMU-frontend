@@ -27,7 +27,7 @@ import com.example.kviz.R
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(
-    chatRoomName: String,
+    chatRoomName: String = "",
     navController: NavHostController
 ) {
     var messageText by remember { mutableStateOf(TextFieldValue("")) }
