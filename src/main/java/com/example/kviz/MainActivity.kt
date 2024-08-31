@@ -69,14 +69,15 @@ class MainActivity : ComponentActivity() {
 
                     // Initialize Retrofit and QuizApiService
                     val retrofit = Retrofit.Builder()
-                        .baseUrl("http://10.0.2.2:8080/") // URL backend-a
+//                        .baseUrl("http://10.0.2.2:9090/") // URL backend-a
+                        .baseUrl("http://localhost:9090/") // URL backend-a
                         .addConverterFactory(GsonConverterFactory.create())
                         .build()
 
                     val quizApi = retrofit.create(QuizApiService::class.java)
 
                     // Fetch and display quiz questions
-                    //QuizContent(quizApi)
+                    QuizContent(quizApi)
                     //ChatRoomsScreen(navController)
                     //ChatScreen("Luka i kreteni")
                     //SignInSignUpScreen()
