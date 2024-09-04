@@ -1,7 +1,9 @@
+
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
     id("com.google.gms.google-services")
+    id("kotlin-kapt")
 }
 
 android {
@@ -90,4 +92,12 @@ dependencies {
     // Navigation
     implementation("androidx.navigation:navigation-compose:2.6.0-alpha03")
     implementation("androidx.lifecycle:lifecycle-viewmodel-compose:2.6.0-alpha03")
+
+    //Data store
+    implementation ("androidx.datastore:datastore-preferences:1.1.1")
+
+    //splash screen
+    implementation ("com.github.bumptech.glide:glide:4.15.1")
+    kapt ("com.github.bumptech.glide:compiler:4.15.1")
+    implementation("io.coil-kt:coil-compose:2.2.2")
 }

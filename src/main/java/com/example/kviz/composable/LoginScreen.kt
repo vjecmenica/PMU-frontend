@@ -20,11 +20,21 @@ import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.example.kviz.ChatRoomsDest
 import com.example.kviz.R
+import com.example.kviz.pozivi.Question.interfacePoziv.UserApiService
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 
 @Composable
 fun SignInSignUpScreen(
     navController: NavHostController
 ) {
+    val retrofit = Retrofit.Builder()
+        .baseUrl("http://10.0.2.2:8080/") // URL backend-a
+        .addConverterFactory(GsonConverterFactory.create())
+        .build()
+
+    val userApi = retrofit.create(UserApiService::class.java)
+
     // State to track which button is selected
     var isSignIn by remember { mutableStateOf(true) }
 

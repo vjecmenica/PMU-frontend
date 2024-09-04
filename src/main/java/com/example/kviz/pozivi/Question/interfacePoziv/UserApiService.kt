@@ -11,14 +11,14 @@ import retrofit2.http.Path
 
 interface UserApiService {
 
-    @GET("users/authenticateUser")
+    @POST("users/authenticateUser")
     suspend fun authenticateUser(@Body userDto: UserDto): PmuResponse<UserDto>
-
-    @GET("users/getUser/{userId}")
-    suspend fun getUserById(@Path("userId") userId: Int): PmuResponse<UserDto>
 
     @POST("users/addUser")
     suspend fun addUser(@Body userDto: UserDto): PmuResponse<UserDto>
+
+    @GET("users/getUser/{userId}")
+    suspend fun getUserById(@Path("userId") userId: Int): PmuResponse<UserDto>
 
     @DELETE("users/deleteUser/{userId}")
     suspend fun deleteUser(@Path("userId") userId: Int): PmuResponse<DtoString>

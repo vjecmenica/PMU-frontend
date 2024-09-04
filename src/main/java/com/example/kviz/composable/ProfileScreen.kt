@@ -46,7 +46,7 @@ fun LeaderboardScreen(
         ) {
             // Prikaz gornje slike
             Image(
-                painter = painterResource(id = R.drawable.background_login), // Zameni odgovarajućom slikom korisnika
+                painter = painterResource(id = R.drawable.face1), // Zameni odgovarajućom slikom korisnika
                 contentDescription = "User Image",
                 modifier = Modifier
 
@@ -98,7 +98,7 @@ fun LeaderboardItem(item: LeaderboardItemData) {
     ) {
         // Slika korisnika
         Image(
-            painter = painterResource(id = R.drawable.background_login), // Zameni odgovarajućom slikom
+            painter = painterResource(id = R.drawable.olovka2), // Zameni odgovarajućom slikom
             contentDescription = "User Image",
             modifier = Modifier.size(50.dp)
         )

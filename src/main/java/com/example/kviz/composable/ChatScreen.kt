@@ -1,5 +1,6 @@
 package com.example.kviz.composable
 
+import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -23,6 +24,15 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.example.kviz.R
+import com.example.kviz.ResultDest
+import com.example.kviz.pozivi.Question.dtos.QuestionDto
+import com.example.kviz.pozivi.Question.interfacePoziv.QuizApiService
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -50,7 +60,7 @@ fun ChatScreen(
                     IconButton(onClick = { /* Leave chatroom action */ }) {
                         Icon(Icons.Default.ExitToApp, contentDescription = "Leave", tint = Color.White)
                     }
-                    IconButton(onClick = { /* Join quiz action */ }) {
+                    IconButton(onClick = { navController.navigate("quiz") }) {
                         Icon(Icons.Default.PlayArrow, contentDescription = "Join Quiz", tint = Color.White)
                     }
                 }
@@ -135,3 +145,130 @@ fun MessageItem(message: Message) {
 }
 
 data class Message(val text: String, val isUser: Boolean)
+
+@Composable
+fun QuizContent(navController: NavHostController) {
+
+    val retrofit = Retrofit.Builder()
+        .baseUrl("http://10.0.2.2:8080/") // URL backend-a
+        .addConverterFactory(GsonConverterFactory.create())
+        .build()
+
+    val quizApi = retrofit.create(QuizApiService::class.java)
+
+    var questions by remember { mutableStateOf<List<QuestionDto>?>(null) }
+    var errorMessage by remember { mutableStateOf<String?>(null) }
+
+    // Fetch quiz questions when the composable is first shown
+    LaunchedEffect(Unit) {
+        fetchQuizQuestions(quizApi = quizApi) { result, error ->
+            questions = result
+            errorMessage = error
+        }
+    }
+
+    // Display either the quiz questions or an error message
+    when {
+        questions != null -> {
+            displayQuizQuestions(navController, questions!!)
+        }
+        errorMessage != null -> {
+            // You can customize this UI as needed
+            Log.e("Quiz", errorMessage ?: "Unknown error")
+        }
+        else -> {
+            // Show a loading state or placeholder
+        }
+    }
+}
+
+fun fetchQuizQuestions(
+    quizApi: QuizApiService,
+    onResult: (List<QuestionDto>?, String?) -> Unit,
+) {
+    CoroutineScope(Dispatchers.IO).launch {
+        try {
+            val response = quizApi.getQuizQuestions()
+
+            withContext(Dispatchers.Main) {
+                if (response.isValid) {
+                    onResult(response.dto, null)
+                } else {
+                    onResult(null, response.errorMessage ?: "Unknown error")
+                }
+            }
+        } catch (e: Exception) {
+            withContext(Dispatchers.Main) {
+                onResult(null, "API call failed: ${e.message}")
+            }
+        }
+    }
+}
+
+//@Composable
+//fun displayQuizQuestions(questions: List<QuestionDto>) {
+//    if (questions.isNotEmpty()) {
+//        QuizScreen(
+//            currentQuestionIndex = 0,
+//            totalQuestions = questions.size,
+//            question = questions[0].questions,
+//            imageResource = R.drawable.background_login, // Ako koristiš resurs slike
+//            options = questions[0].answersDto.map { it.answer },
+//            correctAnswer = questions[0].answersDto.find { it.isCorrect }?.answer ?: "",
+//            onNextQuestion = {
+//                // Logika za prebacivanje na sledeće pitanje
+//            }
+//        )
+//    }
+//}
+@Composable
+fun displayQuizQuestions(navController: NavHostController, questions: List<QuestionDto>) {
+    var currentQuestionIndex by remember { mutableStateOf(0) }
+    var correctAnswers by remember { mutableStateOf(0) }  // Dodajemo promenljivu za praćenje broja tačnih odgovora
+    val randomImages = remember { generateRandomImages() }
+    if (questions.isNotEmpty()) {
+
+        QuizScreen(
+            currentQuestionIndex = currentQuestionIndex,
+            totalQuestions = questions.size,
+            question = questions[currentQuestionIndex].questions,
+            imageResource = randomImages[currentQuestionIndex],
+            //imageResource = R.drawable.background_login, // Ako koristiš resurs slike
+            options = questions[currentQuestionIndex].answersDto.map { it.answer },
+            correctAnswer = questions[currentQuestionIndex].answersDto.find { it.isCorrect }?.answer ?: "",
+            onNextQuestion = {selectedOption ->
+                if (questions[currentQuestionIndex].answersDto.find { it.isCorrect }?.answer == selectedOption) {
+                    Log.d("Quiz", "Correct Answer: $correctAnswers")
+                    correctAnswers++  // Ažuriramo broj tačnih odgovora
+                }
+
+                if (currentQuestionIndex < questions.size - 1) {
+                    currentQuestionIndex++
+                } else {
+                    CoroutineScope(Dispatchers.Main).launch {
+                        try {
+                            navController.navigate(ResultDest.createRoute(correctAnswers))
+                        } catch (e: Exception) {
+                            Log.e("Quiz", "Navigation error: ${e.message}")
+                        }
+                    }
+                }
+            }
+        )
+    }
+}
+
+fun generateRandomImages(): List<Int> {
+    val allImages = (1..16).map { i ->
+        val resourceName = "face$i"
+        val resourceId = getResourceIdByName(resourceName)
+        resourceId
+    }
+
+    return allImages.shuffled().take(10) // Izmešamo i uzmemo prvih 10
+}
+
+fun getResourceIdByName(resourceName: String): Int {
+    return R.drawable::class.java.getDeclaredField(resourceName).getInt(null)
+}
+

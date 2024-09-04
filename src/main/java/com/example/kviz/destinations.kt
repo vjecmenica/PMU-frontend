@@ -17,6 +17,10 @@ interface SnippetDestination {
 object ChatRoomsDest : SnippetDestination {
     override val icon = Icons.Default.MailOutline
     override val route = "chat_rooms"
+
+    fun createRoute(userId: Int): String {
+        return "chat_rooms/$Int"
+    }
 }
 
 object AddQuestionDest : SnippetDestination {
@@ -60,6 +64,15 @@ object AllQuestionsDest : SnippetDestination {
 object QuizDest : SnippetDestination {
     override val icon = Icons.Default.Info
     override val route = "quiz"
+}
+
+object ResultDest : SnippetDestination {
+    override val icon = Icons.Default.AccountBox
+    override val route = "result/{result}"
+
+    fun createRoute(result: Int): String {
+        return "result/$result"
+    }
 }
 
 val destinations = listOf(ChatRoomsDest, SectionsDest, ProfileDest)

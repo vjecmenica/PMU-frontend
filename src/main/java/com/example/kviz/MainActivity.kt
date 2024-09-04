@@ -4,8 +4,9 @@ package com.example.kviz
 //import com.bumptech.glide.request.RequestOptions
 //import coil.compose.rememberAsyncImagePainter
 //import coil.compose.rememberImagePainter
+import android.annotation.SuppressLint
+import android.content.Context
 import android.os.Bundle
-import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.fillMaxSize
@@ -19,7 +20,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,6 +27,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStore
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -36,21 +39,17 @@ import androidx.navigation.navArgument
 import com.example.kviz.composable.ChatRoomsScreen
 import com.example.kviz.composable.ChatScreen
 import com.example.kviz.composable.LeaderboardScreen
-import com.example.kviz.composable.QuizScreen
-import com.example.kviz.composable.SignInSignUpScreen
-import com.example.kviz.pozivi.Question.dtos.QuestionDto
-import com.example.kviz.pozivi.Question.interfacePoziv.QuizApiService
+import com.example.kviz.composable.QuizContent
+import com.example.kviz.composable.ResultScreen
+import com.example.kviz.composable.SignInSignUpScreen1
+import com.example.kviz.composable.SplashScreen
 import com.example.kviz.ui.theme.KvizTheme
 import com.example.vezbazak1.composable.SectionDetailsScreen
 import com.example.vezbazak1.composable.SectionsScreen
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
-import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 
 class MainActivity : ComponentActivity() {
+    val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
+    @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -68,164 +67,111 @@ class MainActivity : ComponentActivity() {
                     val currentRoute = currentDestination?.route ?: LoginDest.route
 
                     // Initialize Retrofit and QuizApiService
-                    val retrofit = Retrofit.Builder()
-//                        .baseUrl("http://10.0.2.2:9090/") // URL backend-a
-                        .baseUrl("http://localhost:9090/") // URL backend-a
-                        .addConverterFactory(GsonConverterFactory.create())
-                        .build()
-
-                    val quizApi = retrofit.create(QuizApiService::class.java)
 
                     // Fetch and display quiz questions
-                    QuizContent(quizApi)
+                    //QuizContent(quizApi)
                     //ChatRoomsScreen(navController)
                     //ChatScreen("Luka i kreteni")
                     //SignInSignUpScreen()
                     //LeaderboardScreen()
+                    var showSplashScreen by remember { mutableStateOf(true) }
 
-                    Scaffold(
-                        bottomBar = {
-                            if (    // prikazuje bottomBar samo ako smo na jednom od ova 3 screen-a
-                                currentDestination?.route == ChatRoomsDest.route ||
-                                currentDestination?.route == SectionsDest.route ||
-                                currentDestination?.route == ProfileDest.route
-                            ) {
-                                BottomAppBar(containerColor = Color(0xFFFFB183)) { // Narandzasta boja
-                                    destinations.forEach { navDestination ->
-                                        NavigationBarItem(
-                                            icon = {
-                                                Icon(
-                                                    imageVector = navDestination.icon,
-                                                    contentDescription = null,
-                                                )
-                                            },
-                                            label = { Text(text = navDestination.route) },
-                                            selected = currentRoute.startsWith(navDestination.route),
-                                            onClick = {
-                                                val newRoute = navDestination.route
-                                                navController.navigate(newRoute) {
-                                                    launchSingleTop = true
-                                                    restoreState = true
-                                                    popUpTo(ChatRoomsDest.route) {
-                                                        saveState = true
-                                                        inclusive = false
+                    if (showSplashScreen) {
+                        SplashScreen(onSplashComplete = {
+                            showSplashScreen = false
+                        })
+                    }
+                    else{
+                        Scaffold(
+                            bottomBar = {
+                                if (    // prikazuje bottomBar samo ako smo na jednom od ova 3 screen-a
+                                    currentDestination?.route == ChatRoomsDest.route ||
+                                    currentDestination?.route == SectionsDest.route ||
+                                    currentDestination?.route == ProfileDest.route
+                                ) {
+                                    BottomAppBar(containerColor = Color(0xFFFFB183)) { // Narandzasta boja
+                                        destinations.forEach { navDestination ->
+                                            NavigationBarItem(
+                                                icon = {
+                                                    Icon(
+                                                        imageVector = navDestination.icon,
+                                                        contentDescription = null,
+                                                    )
+                                                },
+                                                label = { Text(text = navDestination.route) },
+                                                selected = currentRoute.startsWith(navDestination.route),
+                                                onClick = {
+                                                    val newRoute = navDestination.route
+                                                    navController.navigate(newRoute) {
+                                                        launchSingleTop = true
+                                                        restoreState = true
+                                                        popUpTo(ChatRoomsDest.route) {
+                                                            saveState = true
+                                                            inclusive = false
+                                                        }
                                                     }
                                                 }
-                                            }
-                                        )
-                                    }
+                                            )
+                                        }
 
+                                    }
+                                }
+                            }
+                        ) {
+                            NavHost(
+                                navController = navController,
+                                startDestination = LoginDest.route,
+                                modifier = Modifier.padding(it),
+                            ) {
+                                composable(route = ChatRoomsDest.route) {
+                                    ChatRoomsScreen(navController, dataStore)
+                                }
+
+                                composable(route = SectionsDest.route) {
+                                    SectionsScreen(navController)
+                                }
+                                composable(route = ProfileDest.route) {
+                                    LeaderboardScreen(navController)
+                                }
+                                composable(
+                                    route = ChatDest.route,
+                                    arguments = listOf(navArgument("chatName") { type = NavType.StringType })
+                                ) { backStackEntry ->
+                                    val chatName = backStackEntry.arguments?.getString("chatName")
+                                    ChatScreen(navController = navController, chatRoomName = chatName ?: "")
+                                }
+                                composable(route = LoginDest.route) {
+                                    SignInSignUpScreen1(navController, dataStore)
+                                }
+                                composable(
+                                    route = AllQuestionsDest.route,
+                                    arguments = listOf(navArgument("sectionId") { type = NavType.StringType })
+                                ) { backStackEntry ->
+                                    val sectionId = backStackEntry.arguments?.getString("sectionId")
+                                    SectionDetailsScreen(navController = navController, sectionId = sectionId ?: "")
+                                }
+                                composable(route = QuizDest.route ) {
+                                    QuizContent(navController = navController)
+                                }
+                                composable(
+                                    route = ResultDest.route,
+                                    arguments = listOf(navArgument("result") { type = NavType.IntType })
+                                ) { backStackEntry ->
+                                    val result = backStackEntry.arguments?.getInt("result")
+                                    ResultScreen(points = result ?: 0,navController, {}, {})
                                 }
                             }
                         }
-                    ) {
-                        NavHost(
-                            navController = navController,
-                            startDestination = LoginDest.route,
-                            modifier = Modifier.padding(it),
-                        ) {
-                            composable(route = ChatRoomsDest.route) {
-                                ChatRoomsScreen(navController)
-                            }
-                            composable(route = SectionsDest.route) {
-                                SectionsScreen(navController)
-                            }
-                            composable(route = ProfileDest.route) {
-                                LeaderboardScreen(navController)
-                            }
-                            composable(
-                                route = ChatDest.route,
-                                arguments = listOf(navArgument("chatName") { type = NavType.StringType })
-                            ) { backStackEntry ->
-                                val chatName = backStackEntry.arguments?.getString("chatName")
-                                ChatScreen(navController = navController, chatRoomName = chatName ?: "")
-                            }
-                            composable(route = LoginDest.route) {
-                                SignInSignUpScreen(navController)
-                            }
-                            composable(
-                                route = AllQuestionsDest.route,
-                                arguments = listOf(navArgument("sectionId") { type = NavType.StringType })
-                            ) { backStackEntry ->
-                                val sectionId = backStackEntry.arguments?.getString("sectionId")
-                                SectionDetailsScreen(navController = navController, sectionId = sectionId ?: "")
-                            }
-                        }
+
                     }
-
                 }
             }
+
         }
     }
 }
 
-@Composable
-fun QuizContent(quizApi: QuizApiService) {
-    var questions by remember { mutableStateOf<List<QuestionDto>?>(null) }
-    var errorMessage by remember { mutableStateOf<String?>(null) }
 
-    // Fetch quiz questions when the composable is first shown
-    LaunchedEffect(Unit) {
-        fetchQuizQuestions(quizApi) { result, error ->
-            questions = result
-            errorMessage = error
-        }
-    }
-
-    // Display either the quiz questions or an error message
-    when {
-        questions != null -> {
-            displayQuizQuestions(questions!!)
-        }
-        errorMessage != null -> {
-            // You can customize this UI as needed
-            Log.e("Quiz", errorMessage ?: "Unknown error")
-        }
-        else -> {
-            // Show a loading state or placeholder
-        }
-    }
-}
-
-fun fetchQuizQuestions(
-    quizApi: QuizApiService,
-    onResult: (List<QuestionDto>?, String?) -> Unit
-) {
-    CoroutineScope(Dispatchers.IO).launch {
-        try {
-            val response = quizApi.getQuizQuestions()
-
-            withContext(Dispatchers.Main) {
-                if (response.isValid) {
-                    onResult(response.dto, null)
-                } else {
-                    onResult(null, response.errorMessage ?: "Unknown error")
-                }
-            }
-        } catch (e: Exception) {
-            withContext(Dispatchers.Main) {
-                onResult(null, "API call failed: ${e.message}")
-            }
-        }
-    }
-}
-
-@Composable
-fun displayQuizQuestions(questions: List<QuestionDto>) {
-    if (questions.isNotEmpty()) {
-        QuizScreen(
-            currentQuestionIndex = 0,
-            totalQuestions = questions.size,
-            question = questions[0].questions,
-            imageResource = R.drawable.background_login, // Ako koristiš resurs slike
-            options = questions[0].answersDto.map { it.answer },
-            correctAnswer = questions[0].answersDto.find { it.isCorrect }?.answer ?: "",
-            onNextQuestion = {
-                // Logika za prebacivanje na sledeće pitanje
-            }
-        )
-    }
-}
 
 
 @Composable
