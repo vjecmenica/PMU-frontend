@@ -5,6 +5,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -44,6 +45,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.navigation.NavHostController
+import coil.compose.rememberImagePainter
 import com.example.kviz.R
 import com.example.kviz.pozivi.Question.dtos.CategoryDto
 import com.example.kviz.pozivi.Question.dtos.CategoryDtoScreen
@@ -134,125 +136,139 @@ fun SectionScreenOrigin(navController: NavHostController, dataStore: DataStore<P
         }
     }
 
-    Column(
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(Color(0xFF8A4FFF)) // Purple background
+//            .background(Color(0xFF8A4FFF)) // Purple background
     ) {
+        // Postavljanje slike kao pozadine
         Image(
-            painter = painterResource(id = R.drawable.sections_icon1),
-            contentDescription = "Top Image",
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(200.dp),
-            contentScale = ContentScale.Fit
+            painter = rememberImagePainter(data = R.drawable.background_chatroom),
+            contentDescription = "Background Image",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.FillBounds
         )
 
-        Spacer(modifier = Modifier.height(8.dp))
-
-        // Row with "My Categories" text and Add Button
-        var shouldCreateSection by remember { mutableStateOf(false) }
-
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(top = 16.dp)
+        Column(
+            modifier = Modifier.fillMaxSize()
         ) {
-            Text(
-                text = "My Categories",
-                fontSize = 28.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color.White,
+
+            Image(
+                painter = painterResource(id = R.drawable.sections_icon1),
+                contentDescription = "Top Image",
                 modifier = Modifier
-                    .weight(1f) // Take available space
-                    .padding(start = 12.dp)
+                    .fillMaxWidth()
+                    .height(200.dp),
+                contentScale = ContentScale.Fit
             )
 
-            // Add button to open the dialog
-            Button(
-                onClick = { showDialog = true },
-                modifier = Modifier.padding(end = 12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = Color(0xFFFFB183) // Set the background color of the button
-                )
-            ) {
-                Text("Add Section")
-            }
-        }
+            Spacer(modifier = Modifier.height(8.dp))
 
-        // Show the AlertDialog when adding a new section
-        if (showDialog) {
-            AlertDialog(
-                onDismissRequest = { showDialog = false },
-                title = { Text("Add New Section") },
-                text = {
-                    Column {
-                        TextField(
-                            value = newSectionName,
-                            onValueChange = { newSectionName = it },
-                            label = { Text("Section Name") }
-                        )
+            // Row with "My Categories" text and Add Button
+            var shouldCreateSection by remember { mutableStateOf(false) }
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(top = 16.dp)
+            ) {
+                Text(
+                    text = "My Categories",
+                    fontSize = 28.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.White,
+                    modifier = Modifier
+                        .weight(1f) // Take available space
+                        .padding(start = 12.dp)
+                )
+
+                // Add button to open the dialog
+                Button(
+                    onClick = { showDialog = true },
+                    modifier = Modifier.padding(end = 12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Color(0xFFFFB183) // Set the background color of the button
+                    )
+                ) {
+                    Text("Add Section")
+                }
+            }
+
+            // Show the AlertDialog when adding a new section
+            if (showDialog) {
+                AlertDialog(
+                    onDismissRequest = { showDialog = false },
+                    title = { Text("Add New Section") },
+                    text = {
+                        Column {
+                            TextField(
+                                value = newSectionName,
+                                onValueChange = { newSectionName = it },
+                                label = { Text("Section Name") }
+                            )
+                        }
+                    },
+                    confirmButton = {
+                        Button(
+                            onClick = {
+                                showDialog = false
+                                // Trigger the section creation in a coroutine
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    createSection()
+                                }
+                            }
+                        ) {
+                            Text("Add")
+                        }
+                    },
+                    dismissButton = {
+                        Button(onClick = { showDialog = false }) {
+                            Text("Cancel")
+                        }
                     }
-                },
-                confirmButton = {
-                    Button(
+                )
+            }
+
+            // Show the search bar and filtered categories
+            TextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = { Text("Search", color = Color.Gray) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .background(Color.White, RoundedCornerShape(8.dp))
+                    .border(1.dp, Color.Transparent, RoundedCornerShape(8.dp))
+            )
+
+            val filteredCategories = categories.filter {
+                it.sectionDto.name.contains(searchQuery, ignoreCase = true)
+            }
+
+            // Display the list of categories
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp)
+            ) {
+                items(filteredCategories) { category ->
+                    CategoryCardX(
+                        title = category.sectionDto.name,
+                        courses = "${category.numOfQuestions} questions",
                         onClick = {
-                            showDialog = false
-                            // Trigger the section creation in a coroutine
+                            navController.navigate("all_questions/${category.sectionDto.sectionId}")
+                        },
+                        onDeleteClick = {
+                            // Trigger the delete operation in a coroutine
                             CoroutineScope(Dispatchers.IO).launch {
-                                createSection()
+                                deleteSection(category.sectionDto.sectionId)
                             }
                         }
-                    ) {
-                        Text("Add")
-                    }
-                },
-                dismissButton = {
-                    Button(onClick = { showDialog = false }) {
-                        Text("Cancel")
-                    }
+                    )
                 }
-            )
-        }
-
-        // Show the search bar and filtered categories
-        TextField(
-            value = searchQuery,
-            onValueChange = { searchQuery = it },
-            placeholder = { Text("Search", color = Color.Gray) },
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-                .background(Color.White, RoundedCornerShape(8.dp))
-                .border(1.dp, Color.Transparent, RoundedCornerShape(8.dp))
-        )
-
-        val filteredCategories = categories.filter {
-            it.sectionDto.name.contains(searchQuery, ignoreCase = true)
-        }
-
-        // Display the list of categories
-        LazyColumn(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp)
-        ) {
-            items(filteredCategories) { category ->
-                CategoryCardX(
-                    title = category.sectionDto.name,
-                    courses = "${category.numOfQuestions} questions",
-                    onClick = {
-                        navController.navigate("all_questions/${category.sectionDto.sectionId}")
-                    },
-                    onDeleteClick = {
-                        // Trigger the delete operation in a coroutine
-                        CoroutineScope(Dispatchers.IO).launch {
-                            deleteSection(category.sectionDto.sectionId)
-                        }
-                    }
-                )
             }
         }
+
     }
 }
 

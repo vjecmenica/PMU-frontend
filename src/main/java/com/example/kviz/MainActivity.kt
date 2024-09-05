@@ -12,6 +12,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.BottomAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -30,6 +31,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.preferencesDataStore
@@ -39,8 +41,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.kviz.composable.ChatRoomsScreen
 import com.example.kviz.composable.ChatScreen
+import com.example.kviz.composable.ChatroomScreenOrigin
 import com.example.kviz.composable.ChoseCategoryScreen
 import com.example.kviz.composable.ProfileScreenOrigin
 import com.example.kviz.composable.QuizContent
@@ -101,27 +103,21 @@ class MainActivity : ComponentActivity() {
                                                         Image(
                                                             painter = painterResource(id = R.drawable.chat_bubble),
                                                             contentDescription = "Nav bar icon",
-//                                                            modifier = Modifier
-//                                                                .fillMaxWidth()
-//                                                                .height(200.dp),
+                                                            modifier = Modifier.size(30.dp),
                                                             contentScale = ContentScale.Fit
                                                         )
                                                     } else if (navDestination.route == SectionsDest.route) {
                                                         Image(
                                                             painter = painterResource(id = R.drawable.categories_icon),
                                                             contentDescription = "Nav bar icon",
-//                                                            modifier = Modifier
-//                                                                .fillMaxWidth()
-//                                                                .height(200.dp),
+                                                            modifier = Modifier.size(30.dp),
                                                             contentScale = ContentScale.Fit
                                                         )
                                                     } else if (navDestination.route == ProfileDest.route) {
                                                         Image(
                                                             painter = painterResource(id = R.drawable.profile_icon),
                                                             contentDescription = "Nav bar icon",
-//                                                            modifier = Modifier
-//                                                                .fillMaxWidth()
-//                                                                .height(200.dp),
+                                                            modifier = Modifier.size(30.dp),
                                                             contentScale = ContentScale.Fit
                                                         )
                                                     } else {
@@ -165,7 +161,7 @@ class MainActivity : ComponentActivity() {
                                 modifier = Modifier.padding(it),
                             ) {
                                 composable(route = ChatRoomsDest.route) {
-                                    ChatRoomsScreen(navController, dataStore)
+                                    ChatroomScreenOrigin(navController, dataStore)
                                 }
 
                                 composable(route = SectionsDest.route) {

@@ -3,7 +3,10 @@ package com.example.kviz.composable
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -11,25 +14,14 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.KeyboardArrowRight
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TextField
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -38,217 +30,196 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
-import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.navigation.NavHostController
+import coil.compose.rememberImagePainter
 import com.example.kviz.ChatDest
 import com.example.kviz.R
-import com.example.kviz.pozivi.Question.dtos.ChatroomDto
+import com.example.kviz.pozivi.Question.dtos.ChatroomDto1
 import com.example.kviz.pozivi.Question.dtos.UserDto
 import com.example.kviz.pozivi.Question.interfacePoziv.ChatroomApiService
 import com.google.gson.Gson
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
-
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ChatRoomsScreen(
+fun ChatroomScreenOrigin(
     navController: NavHostController,
     dataStore: DataStore<Preferences>
 ) {
-    // Inicijalizacija potrebnih objekata
+    var chatrooms by remember { mutableStateOf<MutableList<ChatroomDto1>>(mutableListOf()) }
+    var numsOfMemberships by remember { mutableStateOf<List<Int>>(emptyList()) }
+
+    var searchQuery by remember { mutableStateOf("") }
+
     val gson = Gson()
     val userDtoKey = stringPreferencesKey("user_dto")
 
     val retrofit = Retrofit.Builder()
-        .baseUrl("http://10.0.2.2:8080/") // URL backend-a
+        .baseUrl("http://10.0.2.2:8080/")
         .addConverterFactory(GsonConverterFactory.create())
         .build()
-    var showDialog by remember { mutableStateOf(false) }
-    var chatRoomName by remember { mutableStateOf("") }
-    val userApi = retrofit.create(ChatroomApiService::class.java)
 
-    // State za čuvanje lista chat soba
-    var chatRooms by remember { mutableStateOf<List<ChatroomDto>>(emptyList()) }
+    val apiService = retrofit.create(ChatroomApiService::class.java)
 
-    // Pokretanje korutine za preuzimanje podataka iz DataStore i API-ja
     LaunchedEffect(Unit) {
         val userDtoJson = dataStore.data.map { preferences ->
             preferences[userDtoKey]
         }.firstOrNull()
-        Log.d("ChatRoomsScreen", "UserDto JSON iz DataStore: $userDtoJson")
+
+        var i = 1
         userDtoJson?.let { json ->
             val userDto = gson.fromJson(json, UserDto::class.java)
-            Log.d("ChatRoomsScreen", "UserDto iz JSON-a: $userDto")
-            if (userDto != null && userDto.userid != null) {
-                try {
-                    val response = userApi.getAllChatroomsForUser(userDto.userid)
-                    Log.d("ChatRoomsScreen", "API poziv uspešan: ${response.isValid}")
-                    if (response.isValid) {
-//                        chatRooms = response.dto // Ako je data lista, ovo treba promeniti
-                    } else {
-                        Log.e("ChatRoomsScreen", "Greška u API odgovoru: ${response.errorMessage}")
-                    }
-                } catch (e: Exception) {
-                    Log.e("ChatRoomsScreen", "Mrežna greška: $e")
-                }
-            } else {
-                Log.e("ChatRoomsScreen", "UserDto je null ili nema userId")
-            }
+            if (userDto != null && userDto.userid != null) i = userDto.userid
         }
+
+        chatrooms = try {
+            apiService.getAllChatroomsForUser(i).dto?.toMutableList() ?: mutableListOf()
+        } catch (e: Exception) {
+            mutableListOf()
+        }
+
+        numsOfMemberships = try {
+            apiService.getNumOfMembershipForChatroomId(i).dto ?: emptyList()
+        } catch (e: Exception) {
+            emptyList()
+        }
+
+        Log.d("NUMS: ", numsOfMemberships.toString())
+        Log.d("Chatrooms: ", chatrooms.toString())
+        // Sada možemo da menjamo chatrooms jer je MutableList
+        chatrooms = chatrooms.mapIndexed { index, chatroomDto ->
+            if (index < numsOfMemberships.size) {
+                chatroomDto.copy(num = numsOfMemberships[index])
+            } else {
+                chatroomDto
+            }
+        }.toMutableList()
+        Log.d("Chatrooms: ", chatrooms.toString())
     }
 
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("ChatRooms", fontSize = 24.sp, color = Color.White) },
-                colors = TopAppBarDefaults.smallTopAppBarColors(
-                    containerColor = Color(0xFFFFB183), // Narandžasta boja
-                    titleContentColor = Color.White // Boja teksta
-                )
-            )
-        },
-        floatingActionButton = {
-            FloatingActionButton(onClick = { showDialog = true  }, containerColor = Color(0xFFFFB183)) { // Narandžasta boja
-                Icon(Icons.Default.Add, contentDescription = "Add", tint = Color.White)
-            }
-        },
-        content = { paddingValues ->
-            LazyColumn(
+    // Koristi Image komponentu za pozadinu
+    Box(
+        modifier = Modifier.fillMaxSize()
+    ) {
+        // Postavljanje slike kao pozadine
+        Image(
+            painter = rememberImagePainter(data = R.drawable.background_chatroom),
+            contentDescription = "Background Image",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.FillBounds
+        )
+
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            // Slika na vrhu
+            Image(
+                painter = painterResource(id = R.drawable.chatroom_top_icon),
+                contentDescription = "Top Image",
                 modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color(0xFF8A4FFF)) // Ljubičasta pozadina
-                    .padding(paddingValues) // Dodaj padding iz Scaffold-a
+                    .fillMaxWidth()
+                    .height(200.dp),
+                contentScale = ContentScale.FillBounds
+            )
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // "Chatrooms" tekst
+            Text(
+                text = "Chatrooms",
+                fontSize = 24.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color.White, // Bela slova
+                modifier = Modifier.padding(horizontal = 16.dp)
+            )
+
+            // Search Bar
+            TextField(
+                value = searchQuery,
+                onValueChange = { searchQuery = it },
+                placeholder = { Text("Search", color = Color.Gray) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp)
+                    .background(Color.White, RoundedCornerShape(8.dp))
+                    .border(1.dp, Color.Transparent, RoundedCornerShape(8.dp))
+            )
+
+            // Filtrirane kategorije/chat sobe
+            val filteredChats = chatrooms.filter {
+                it.name.contains(searchQuery, ignoreCase = true)
+            }
+
+            LazyColumn(
+                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)
             ) {
-                items(chatRooms) { chatRoom ->
-                    ChatRoomItem(navController, chatRoom,  dataStore)
+
+                items(filteredChats) { chatroom ->
+                    ChatroomCard(
+                        title = chatroom.name,
+                        participants = "${chatroom.num} participants",
+                        onClick = {
+                            navController.navigate(ChatDest.createRoute(chatName = chatroom.name))
+                        },
+                    )
                 }
             }
         }
-    )
-    if (showDialog) {
-        AlertDialog(
-            onDismissRequest = { showDialog = false },
-            title = { Text(text = "Add Chat Room") },
-            text = {
-                Column {
-                    TextField(
-                        value = chatRoomName,
-                        onValueChange = { chatRoomName = it },
-                        label = { Text("Chat Room Name") }
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    // Dodavanje slike (koristimo placeholder jer nema opcije za biranje slike)
-                    Image(
-                        painter = painterResource(id = R.drawable.background_login), // Zameni sa pravim resursom
-                        contentDescription = "Chat Room Image",
-                        modifier = Modifier
-                            .size(100.dp)
-                            .clip(CircleShape)
-                            .align(Alignment.CenterHorizontally)
-                    )
-                    // Dodavanje slike može biti prošireno sa pickerom za izbor slike iz galerije
-                }
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = {
-                        // Pokrenite korutinu za API poziv
-                        CoroutineScope(Dispatchers.IO).launch {
-                            val userDtoJson = dataStore.data.map { preferences ->
-                                preferences[userDtoKey]
-                            }.firstOrNull()
-
-                            userDtoJson?.let { json ->
-                                val userDto = gson.fromJson(json, UserDto::class.java)
-                                if (userDto != null && userDto.userid != null) {
-                                    val newChatroom = ChatroomDto(
-                                        chatroomId = null,
-                                        name = chatRoomName,
-                                        owner = userDto
-                                    )
-                                    try {
-                                        val response = userApi.addChatroom(newChatroom)
-                                        if (response.isValid) {
-                                            withContext(Dispatchers.Main) {
-                                                // Dodaj novi chatroom u listu
-                                                chatRooms = chatRooms.plusElement(response.dto)
-                                                showDialog = false
-                                            }
-                                        } else {
-                                            Log.e("ChatRoomsScreen", "Greška u API odgovoru prilikom dodavanja: ${response.errorMessage}")
-                                        }
-                                    } catch (e: Exception) {
-                                        Log.e("ChatRoomsScreen", "Mrežna greška prilikom dodavanja: $e")
-                                    }
-                                }
-                            }
-                        }
-                    }
-                ) {
-                    Text("Save")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDialog = false }) {
-                    Text("Cancel")
-                }
-            }
-        )
     }
 }
 
 @Composable
-fun ChatRoomItem(
-    navController: NavHostController,
-    chatroomDto: ChatroomDto,
-    dataStore: DataStore<Preferences>
+fun ChatroomCard(
+    title: String,
+    participants: String,
+    onClick: () -> Unit
 ) {
-    Row(
+    Card(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween // ili Arrangement.End
-    ) {
-        Image(
-            painter = painterResource(id = R.drawable.background_login), // Zameni sa pravim resursom
-            contentDescription = null,
-            modifier = Modifier
-                .size(40.dp)
-                .clip(CircleShape)
+            .padding(vertical = 8.dp)
+            .height(100.dp)
+            .clickable { onClick() },
+        shape = RoundedCornerShape(8.dp),
+        elevation = CardDefaults.cardElevation(hoveredElevation = 10.dp, defaultElevation = 10.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = Color.White // Bele kartice
         )
-        Spacer(modifier = Modifier.width(16.dp))
-        Text(text = chatroomDto.name, color = Color.White, fontSize = 18.sp)
-        Spacer(modifier = Modifier.weight(1f))
-        Button(onClick = {
-            CoroutineScope(Dispatchers.IO).launch {
-                withContext(Dispatchers.Main) {
-                    val gson = Gson()
-                    val chatroomDtoKey = stringPreferencesKey("chatroom_dto")
-                    val chatroomDtoJson = gson.toJson(chatroomDto)
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.White)
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Naziv chat sobe
+            Text(
+                text = title,
+                fontSize = 18.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF8A4FFF) // Ljubičasta slova
+            )
 
-                    dataStore.edit { preferences ->
-                        preferences[chatroomDtoKey] = chatroomDtoJson
-                    }.apply { }
-                    navController.navigate(ChatDest.createRoute(chatroomDto.name))
-                }
-            }
-        }) {
-            Icon(Icons.Filled.KeyboardArrowRight, contentDescription = "Enter")
+            // Broj učesnika
+            Text(
+                text = participants,
+                fontSize = 14.sp,
+                color = Color(0xFF8A4FFF) // Ljubičasta slova
+            )
         }
     }
 }
