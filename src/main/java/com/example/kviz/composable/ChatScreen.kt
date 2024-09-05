@@ -7,16 +7,22 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -34,9 +40,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -44,6 +52,7 @@ import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.navigation.NavHostController
+import coil.compose.rememberImagePainter
 import com.example.kviz.ChoseCategoryDest
 import com.example.kviz.R
 import com.example.kviz.ResultDest
@@ -61,9 +70,203 @@ import kotlinx.coroutines.withContext
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
+fun TopBar() {
+    TopAppBar(
+        title = {
+            Text(
+                text = "ETF Chatroom Gang",
+                fontSize = 20.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF8A4FFF) // Promenjena boja teksta
+            )
+        },
+        colors =  TopAppBarDefaults.smallTopAppBarColors(
+            containerColor = Color(0xFFB995FF),
+            titleContentColor = Color.White
+        ), // Ljubičasta boja za top app bar
+        actions = {
+            IconButton(onClick = { /* Action for Play Button */ }) {
+                Image(
+                    painter = painterResource(id = R.drawable.play_button),
+                    contentDescription = "Play Button",
+                    modifier = Modifier.size(48.dp)
+                )
+            }
+        }
+    )
+}
+
+@Composable
+fun MessagesList() {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+    ) {
+        // Hardkodovane poruke sa bubble pozadinom
+        MessageBubble(
+            imageRes = R.drawable.face1,
+            messageText = "Super!",
+            time = "Yesterday",
+            isCurrentUser = false
+        )
+        MessageBubble(
+            imageRes = R.drawable.face10,
+            messageText = "Jel hoće neko da igra?",
+            isCurrentUser = false
+        )
+        MessageBubble(
+            imageRes = R.drawable.face13,
+            messageText = "Evo čeka se admin.",
+            isCurrentUser = false
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        MessageBubble(
+            imageRes = R.drawable.face4,
+            messageText = "Ulazimmm",
+            isCurrentUser = true
+        )
+    }
+}
+
+@Composable
+fun MessageBubble(imageRes: Int, messageText: String, time: String? = null, isCurrentUser: Boolean) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        horizontalArrangement = if (isCurrentUser) Arrangement.End else Arrangement.Start,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (!isCurrentUser) {
+            // Avatar sa leve strane za poruke od drugih korisnika
+            Image(
+                painter = painterResource(id = imageRes),
+                contentDescription = "User Avatar",
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+        }
+
+        Column {
+            if (time != null) {
+                Text(
+                    text = time,
+                    fontSize = 12.sp,
+                    color = Color.Gray,
+                    modifier = Modifier.padding(bottom = 4.dp)
+                )
+            }
+
+            // Pozadina poruke sa balonom (message bubble)
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(16.dp))
+                    .background(if (isCurrentUser) Color(0xFFFF8C00) else Color.White)
+                    .padding(12.dp)
+            ) {
+                Text(
+                    text = messageText,
+                    fontSize = 16.sp,
+                    color = if (isCurrentUser) Color.White else Color.Black
+                )
+            }
+        }
+
+        if (isCurrentUser) {
+            Spacer(modifier = Modifier.width(8.dp))
+            // Avatar sa desne strane za trenutnog korisnika
+            Image(
+                painter = painterResource(id = imageRes),
+                contentDescription = "User Avatar",
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+            )
+        }
+    }
+}
+@Composable
 fun ChatScreen(
+    navController: NavHostController,
+    chatRoomName: String,
+    dataStore: DataStore<Preferences>
+) {
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+    ) {
+        Image(
+            painter = rememberImagePainter(data = R.drawable.background_chatroom),
+            contentDescription = "Background Image",
+            modifier = Modifier.fillMaxSize(),
+            contentScale = ContentScale.Crop
+        )
+        Column(
+            modifier = Modifier.fillMaxSize()
+        ) {
+            // Gornja traka sa nazivom chat room-a i Play dugmetom
+            TopBar()
+
+            // Lista poruka
+            MessagesList()
+
+            Spacer(modifier = Modifier.weight(1f)) // Ovo gura polje za unos dole
+
+            // Polje za unos poruke na dnu
+            MessageInputField()
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun MessageInputField() {
+    // Koristimo remember i mutableStateOf da čuvamo i pratimo stanje unosa
+    var messageText by remember { mutableStateOf("") }
+
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+
+            //.align(Alignment.BottomCenter), // Poravnanje pri dnu
+            .background(Color((0xFF8A4FFF))),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        TextField(
+            value = messageText, // Ovdje postavljamo dinamički tekst
+            onValueChange = { newText -> messageText = newText }, // Ažuriramo stanje unosa
+            placeholder = { Text(text = "Send message") },
+            modifier = Modifier.padding(8.dp)
+                .clip(RoundedCornerShape(16.dp)), // Zauzmi širinu dostupnog prostora
+            colors = TextFieldDefaults.textFieldColors(
+                containerColor = Color.White
+            ),
+
+            )
+        Spacer(modifier = Modifier.width(8.dp))
+
+        // Dugme za slanje poruke
+        Button(onClick = {
+            // Ovdje možeš dodati akciju za slanje poruke
+            println("Poruka poslata: $messageText")
+            messageText = "" // Resetuj polje za unos nakon slanja poruke
+        }) {
+            Text(text = "Send")
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun ChatScreen1(
     chatRoomName: String = "",
     navController: NavHostController,
     dataStore: DataStore<Preferences>
