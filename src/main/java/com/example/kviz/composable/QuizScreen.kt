@@ -64,7 +64,8 @@ fun QuizScreen(
     options: List<String>,
     correctAnswer: String,
     onNextQuestion: (String) -> Unit,
-    categoryId: Int
+    categoryId: Int,
+    chatroomId: Int
 ) {
     var selectedOption by remember { mutableStateOf<String?>(null) }
     var isAnswerCorrect by remember { mutableStateOf<Boolean?>(null) }

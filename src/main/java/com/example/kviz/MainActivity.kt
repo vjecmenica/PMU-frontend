@@ -172,10 +172,14 @@ class MainActivity : ComponentActivity() {
                                 }
                                 composable(
                                     route = ChatDest.route,
-                                    arguments = listOf(navArgument("chatName") { type = NavType.StringType })
+                                    arguments = listOf(
+                                        navArgument("chatName") { type = NavType.StringType },
+                                        navArgument("chatroomId") { type = NavType.IntType },
+                                    )
                                 ) { backStackEntry ->
                                     val chatName = backStackEntry.arguments?.getString("chatName")
-                                    ChatScreen(navController = navController, chatRoomName = chatName ?: "", dataStore = dataStore)
+                                    val chatroomId = backStackEntry.arguments?.getInt("chatroomId")
+                                    ChatScreen(navController = navController, chatroomId = chatroomId ?: 1, chatRoomName = chatName ?: "", dataStore = dataStore)
                                 }
                                 composable(route = LoginDest.route) {
                                     SignInSignUpScreen1(navController, dataStore)
@@ -202,10 +206,15 @@ class MainActivity : ComponentActivity() {
                                 }
                                 composable(
                                     route = ResultDest.route,
-                                    arguments = listOf(navArgument("result") { type = NavType.IntType })
+                                    arguments = listOf(
+                                        navArgument("result") { type = NavType.IntType },
+                                        navArgument("chatroomId") { type = NavType.IntType },
+
+                                    )
                                 ) { backStackEntry ->
                                     val result = backStackEntry.arguments?.getInt("result")
-                                    ResultScreen(points = result ?: 0,navController, {}, {})
+                                    val chatroomId = backStackEntry.arguments?.getInt("chatroomId")
+                                    ResultScreen(points = result ?: 0,navController, {}, {}, chatroomId ?: 1)
                                 }
                                 composable(
                                     route = ChoseCategoryDest.route,

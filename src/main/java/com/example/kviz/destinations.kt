@@ -20,7 +20,6 @@ object ChatRoomsDest : SnippetDestination {
     override val route = "chat_rooms"
 
     fun createRoute(userId: Int): String {
-//        return "chat_rooms/$Int"
         return "chat_rooms/$userId"
     }
 }
@@ -32,10 +31,10 @@ object ProfileDest : SnippetDestination {
 
 object ChatDest : SnippetDestination {
     override val icon = Icons.Default.Send
-    override val route = "chat/{chatName}"
+    override val route = "chat/{chatName}/{chatroomId}"
 
-    fun createRoute(chatName: String): String {
-        return "chat/$chatName"
+    fun createRoute(chatName: String, chatroomId: Int): String {
+        return "chat/$chatName/$chatroomId"
     }
 }
 
@@ -65,10 +64,10 @@ object QuizDest : SnippetDestination {
 
 object ResultDest : SnippetDestination {
     override val icon = Icons.Default.AccountBox
-    override val route = "result/{result}"
+    override val route = "result/{result}/{chatroomId}"
 
-    fun createRoute(result: Int): String {
-        return "result/$result"
+    fun createRoute(result: Int, chatroomId: Int): String {
+        return "result/$result/$chatroomId"
     }
 }
 

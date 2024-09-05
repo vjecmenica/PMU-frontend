@@ -25,7 +25,13 @@ import com.example.kviz.ChatDest
 import com.example.kviz.R
 
 @Composable
-fun ResultScreen(points: Int, navController: NavHostController, onContinue: () -> Unit, onShare: () -> Unit) {
+fun ResultScreen(
+    points: Int,
+    navController: NavHostController,
+    onContinue: () -> Unit,
+    onShare: () -> Unit,
+    chatroomId: Int
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -63,7 +69,7 @@ fun ResultScreen(points: Int, navController: NavHostController, onContinue: () -
         Spacer(modifier = Modifier.size(32.dp))
 
         Button(
-            onClick = { navController.navigate(ChatDest.createRoute("Chat room1"))} ,//ovde dodati koji je chatroom
+            onClick = { navController.navigate(ChatDest.createRoute(chatName = "Chat room", chatroomId = chatroomId))} ,//ovde dodati koji je chatroom
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 32.dp)

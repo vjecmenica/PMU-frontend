@@ -171,7 +171,7 @@ fun ChatroomScreenOrigin(
                         title = chatroom.name,
                         participants = "${chatroom.num} participants",
                         onClick = {
-                            navController.navigate(ChatDest.createRoute(chatName = chatroom.name))
+                            navController.navigate(ChatDest.createRoute(chatName = chatroom.name, chatroomId = chatroom.chatroomId ?: 1))
                         },
                     )
                 }
