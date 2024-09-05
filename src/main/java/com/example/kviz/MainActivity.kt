@@ -42,7 +42,6 @@ import androidx.navigation.navArgument
 import com.example.kviz.composable.ChatRoomsScreen
 import com.example.kviz.composable.ChatScreen
 import com.example.kviz.composable.ChoseCategoryScreen
-import com.example.kviz.composable.LeaderboardScreen
 import com.example.kviz.composable.ProfileScreenOrigin
 import com.example.kviz.composable.QuizContent
 import com.example.kviz.composable.ResultScreen
@@ -173,7 +172,7 @@ class MainActivity : ComponentActivity() {
                                     SectionScreenOrigin(navController, dataStore)
                                 }
                                 composable(route = ProfileDest.route) {
-                                    ProfileScreenOrigin(navController)
+                                    ProfileScreenOrigin(navController, dataStore)
                                 }
                                 composable(
                                     route = ChatDest.route,

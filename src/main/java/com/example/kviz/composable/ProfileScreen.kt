@@ -1,5 +1,7 @@
 package com.example.kviz.composable
 
+import android.util.Log
+
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -25,6 +27,11 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -34,19 +41,65 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.navigation.NavHostController
 import coil.compose.rememberImagePainter
 import com.example.kviz.R
+import com.example.kviz.pozivi.Question.dtos.ParticipationDto
+import com.example.kviz.pozivi.Question.dtos.UserDto
+import com.example.kviz.pozivi.Question.dtos.UserProfileDto
+import com.example.kviz.pozivi.Question.interfacePoziv.ChatroomApiService
+import com.example.kviz.pozivi.Question.interfacePoziv.UserApiService
+import com.google.gson.Gson
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.map
+import retrofit2.Retrofit
+import retrofit2.converter.gson.GsonConverterFactory
 
 @Composable
 fun ProfileScreenOrigin(
-    navController: NavHostController
+    navController: NavHostController,
+    dataStore: DataStore<Preferences>
 ) {
     // Pozadina ekrana
     Box(
         modifier = Modifier
             .fillMaxSize()
     ) {
+        val gson = Gson()
+        val userDtoKey = stringPreferencesKey("user_dto")
+        val retrofit = Retrofit.Builder()
+            .baseUrl("http://10.0.2.2:8080/") // URL backend-a
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+        val userApi = retrofit.create(UserApiService::class.java)
+        val chatroomApi = retrofit.create(ChatroomApiService::class.java)
+
+        var userDto by remember { mutableStateOf<UserDto?>(null) }
+        var userProfileDto by remember { mutableStateOf<UserProfileDto?>(null) }
+        var quizResults by remember { mutableStateOf<List<ParticipationDto>?>(null) }
+
+        LaunchedEffect(Unit) {
+            val userDtoJson = dataStore.data.map { preferences ->
+                preferences[userDtoKey]
+            }.firstOrNull()
+            Log.d("Profile screen", "UserDto JSON iz DataStore: $userDtoJson")
+            userDtoJson?.let { json ->
+                userDto = gson.fromJson(json, UserDto::class.java)
+            }
+
+            Log.d("Profile screen", "UserDto: $userDto")
+
+            userDto?.let { user ->
+                userProfileDto = userApi.getUserInfoForProfile(userId = user.userid).dto
+                Log.d("Profile screen", "userProfileDto: $userProfileDto")
+                quizResults = chatroomApi.getResultByUserId(userId = user.userid).dto
+                Log.d("Profile screen", "quizResults: $quizResults")
+            }
+        }
+
         Image(
             painter = rememberImagePainter(data = R.drawable.profil_background),
             contentDescription = "Background",
@@ -78,10 +131,14 @@ fun ProfileScreenOrigin(
 
             // Ime korisnika ispod profilne ikonice
             Text(
-                text = "Luka",
+                text = (userDto?.name ?: ""),
                 color = Color.White,
                 style = MaterialTheme.typography.headlineMedium,
                 modifier = Modifier.padding(top = 8.dp)
+            )
+
+            Spacer(
+                modifier = Modifier.height(8.dp)
             )
 
             // Kartice sa statistikom
@@ -105,16 +162,24 @@ fun ProfileScreenOrigin(
                     horizontalArrangement = Arrangement.SpaceEvenly,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    CardInfoWithFraction(R.drawable.star_profile, "590", "POINTS")
-                    CardInfoWithFraction(R.drawable.rate, "11%", "SUCCESS RATE")
-                    CardInfoWithFraction(R.drawable.trophy, "6", "PLAYED")
+                    Log.d("Profile screen", "Points: ${userProfileDto?.points}")
+                    Log.d("Profile screen", "Rate: ${userProfileDto?.rate}")
+
+                    val rate_percenatege = (userProfileDto?.rate ?: 1) * 10
+                    val played = (((userProfileDto?.points) ?: 1) / 10 / (userProfileDto?.rate ?: 1)) ?: 0
+                    Log.d("Profile screen", "Played: $played")
+
+                    CardInfoWithFraction(R.drawable.star_profile, userProfileDto?.points.toString(), "POINTS")
+                    CardInfoWithFraction(R.drawable.rate, rate_percenatege.toString() + "%", "SUCCESS RATE")
+                    CardInfoWithFraction(R.drawable.trophy, played.toString(), "PLAYED")
                 }
             }
 
             Spacer(modifier = Modifier.height(16.dp)) // Razmak pre tabele
 
             // Tabela sa istorijom kvizova
-            QuizHistoryTable()
+            QuizHistoryTable(quizResults ?: emptyList())
+
         }
     }
 }
@@ -141,7 +206,7 @@ fun CardInfoWithFraction(iconRes: Int, value: String, label: String) {
 
 
 @Composable
-fun QuizHistoryTable() {
+fun QuizHistoryTable(quizResults: List<ParticipationDto>) {
     Column(
         modifier = Modifier
             .padding(16.dp)
@@ -198,7 +263,30 @@ fun QuizHistoryTable() {
             //Spacer(modifier = Modifier.width(8.dp))
         }
 
-        quizHistory.forEachIndexed { index, data ->
+//        quizHistory.forEachIndexed { index, data ->
+//            val backgroundColor = if (index % 2 == 0) Color.White else Color(0xFFF5F5F5)
+//            Row(
+//                modifier = Modifier
+//                    .fillMaxWidth()
+//                    .background(backgroundColor)
+//                    .padding(8.dp),
+//                horizontalArrangement = Arrangement.Start
+//            ) {
+//                Spacer(modifier = Modifier.width(100.dp))
+//                Column (verticalArrangement = Arrangement.Center){
+//                    Text(text = data.first, color = Color.Black)
+//                }
+//                Spacer(modifier = Modifier.width(60.dp))
+//                Column (verticalArrangement = Arrangement.Center){
+//                    Text(text = data.second, color = Color.Black)
+//                }
+//
+//
+//                //Spacer(modifier = Modifier.width(8.dp))
+//            }
+//        }
+
+        quizResults.forEachIndexed { index, data ->
             val backgroundColor = if (index % 2 == 0) Color.White else Color(0xFFF5F5F5)
             Row(
                 modifier = Modifier
@@ -209,11 +297,11 @@ fun QuizHistoryTable() {
             ) {
                 Spacer(modifier = Modifier.width(100.dp))
                 Column (verticalArrangement = Arrangement.Center){
-                    Text(text = data.first, color = Color.Black)
+                    Text(text = data.result.toString(), color = Color.Black)
                 }
                 Spacer(modifier = Modifier.width(60.dp))
                 Column (verticalArrangement = Arrangement.Center){
-                    Text(text = data.second, color = Color.Black)
+                    Text(text = data.quizDto.chatroom.name, color = Color.Black)
                 }
 
 

@@ -13,3 +13,11 @@ data class PmuResponse<T>(
     val errorMessage: String?,
     val isValid: Boolean
 )
+
+data class UserProfileDto(
+    val userDto: UserDto,
+    val chatroomCount: Int,
+    val sectionCount: Int,
+    val rate: Int,
+    val points: Int
+)

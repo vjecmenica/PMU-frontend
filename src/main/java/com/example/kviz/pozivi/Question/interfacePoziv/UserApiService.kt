@@ -3,6 +3,7 @@ package com.example.kviz.pozivi.Question.interfacePoziv
 import com.example.kviz.pozivi.Question.dtos.DtoString
 import com.example.kviz.pozivi.Question.dtos.PmuResponse
 import com.example.kviz.pozivi.Question.dtos.UserDto
+import com.example.kviz.pozivi.Question.dtos.UserProfileDto
 import retrofit2.http.Body
 import retrofit2.http.DELETE
 import retrofit2.http.GET
@@ -22,4 +23,8 @@ interface UserApiService {
 
     @DELETE("users/deleteUser/{userId}")
     suspend fun deleteUser(@Path("userId") userId: Int): PmuResponse<DtoString>
+
+    @GET("users/getUserInfoForProfile/{userId}")
+    suspend fun getUserInfoForProfile(@Path("userId") userId: Int): PmuResponse<UserProfileDto>
+
 }

@@ -99,7 +99,7 @@ fun ChatRoomsScreen(
                     val response = userApi.getAllChatroomsForUser(userDto.userid)
                     Log.d("ChatRoomsScreen", "API poziv uspešan: ${response.isValid}")
                     if (response.isValid) {
-                        chatRooms = response.dto // Ako je data lista, ovo treba promeniti
+//                        chatRooms = response.dto // Ako je data lista, ovo treba promeniti
                     } else {
                         Log.e("ChatRoomsScreen", "Greška u API odgovoru: ${response.errorMessage}")
                     }

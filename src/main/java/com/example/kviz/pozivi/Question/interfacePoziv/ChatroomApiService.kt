@@ -3,6 +3,8 @@ package com.example.kviz.pozivi.Question.interfacePoziv
 import com.example.kviz.pozivi.Question.dtos.CategoryDto
 import com.example.kviz.pozivi.Question.dtos.CategoryDtoScreen
 import com.example.kviz.pozivi.Question.dtos.ChatroomDto
+import com.example.kviz.pozivi.Question.dtos.ChatroomDto1
+import com.example.kviz.pozivi.Question.dtos.ParticipationDto
 import com.example.kviz.pozivi.Question.dtos.PmuResponse
 import retrofit2.http.Body
 import retrofit2.http.DELETE
@@ -12,8 +14,14 @@ import retrofit2.http.Path
 
 interface ChatroomApiService {
 
+//    @GET("membership/getAllChatroomsByUserId/{userId}")
+//    suspend fun getAllChatroomsForUser(@Path("userId") userId:Int): PmuResponse<List<ChatroomDto>>
+
     @GET("membership/getAllChatroomsByUserId/{userId}")
-    suspend fun getAllChatroomsForUser(@Path("userId") userId:Int): PmuResponse<List<ChatroomDto>>
+    suspend fun getAllChatroomsForUser(@Path("userId") userId:Int): PmuResponse<List<ChatroomDto1>>
+
+    @GET("membership/getNumOfMembershipForChatroomId/{userId}")
+    suspend fun getNumOfMembershipForChatroomId(@Path("userId") userId:Int ): PmuResponse<List<Int>>
 
     @POST("chatrooms/addChatroom")
     suspend fun addChatroom(@Body chatroomDto: ChatroomDto): PmuResponse<ChatroomDto>
@@ -32,6 +40,10 @@ interface ChatroomApiService {
 
     @DELETE("sections/deleteSection/{sectionId}")
     suspend fun deleteSection(@Path("sectionId") sectionId: Int): PmuResponse<CategoryDto>
+
+    @GET("participations/getResultByUserId/{userId}")
+    suspend fun getResultByUserId(@Path("userId") userId: Int): PmuResponse<List<ParticipationDto>>
+
 }
 
 //@GetMapping(value = "/getUserSectionScreen/{userId}")
