@@ -44,7 +44,7 @@ interface ChatroomApiService {
     @GET("participations/getResultByUserId/{userId}")
     suspend fun getResultByUserId(@Path("userId") userId: Int): PmuResponse<List<ParticipationDto>>
 
-    @POST("membership/joinChatroom/{username}/{chatroomId}")
+    @POST("membership/joinChatroomByUsername/{username}/{chatroomId}")
     suspend fun joinChatroom(@Path("username") username: String, @Path("chatroomId") chatroomId: Int)
 
 }

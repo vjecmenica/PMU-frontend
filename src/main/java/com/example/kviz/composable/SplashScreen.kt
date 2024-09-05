@@ -36,7 +36,7 @@ fun SplashScreen(onSplashComplete: () -> Unit) {
             .background(Color(0xFF8A4FFF))
     ) {
         Image(
-            painter = rememberAsyncImagePainter(model = R.drawable.splash_screen), // Zamenite sa vašim GIF-om
+            painter = rememberAsyncImagePainter(model = R.drawable.your_logo1),
             contentDescription = "Splash GIF",
             modifier = Modifier.size(300.dp)
         )
