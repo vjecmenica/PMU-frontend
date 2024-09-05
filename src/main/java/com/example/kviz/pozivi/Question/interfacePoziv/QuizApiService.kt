@@ -12,7 +12,14 @@ import retrofit2.http.Path
 
 interface QuizApiService {
     @GET("questions/generateTenQuestions/1/1/1")
-    suspend fun getQuizQuestions(): QuizResponse
+    suspend fun getQuizQuestionsHardkodovano(): QuizResponse
+
+    @GET("questions/generateTenQuestions/{chatroomId}/{section}/{userId}")
+    suspend fun getQuizQuestions(
+        @Path("chatroomId") chatroomId: Int,
+        @Path("section") section: Int,
+        @Path("userId") userId: Int
+    ): QuizResponse
 
     @DELETE("questions/deleteQuestions/{questionId}")
     suspend fun deleteQuestion(@Path("questionId") questionId: Int): QuestionDeleteResponse

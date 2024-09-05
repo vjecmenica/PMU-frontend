@@ -3,17 +3,35 @@ package com.example.kviz.composable
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ExitToApp
 import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -22,13 +40,22 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.navigation.NavHostController
+import com.example.kviz.ChoseCategoryDest
 import com.example.kviz.R
 import com.example.kviz.ResultDest
+import com.example.kviz.pozivi.Question.dtos.ChatroomDto
 import com.example.kviz.pozivi.Question.dtos.QuestionDto
+import com.example.kviz.pozivi.Question.dtos.UserDto
 import com.example.kviz.pozivi.Question.interfacePoziv.QuizApiService
+import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import retrofit2.Retrofit
@@ -38,8 +65,53 @@ import retrofit2.converter.gson.GsonConverterFactory
 @Composable
 fun ChatScreen(
     chatRoomName: String = "",
-    navController: NavHostController
+    navController: NavHostController,
+    dataStore: DataStore<Preferences>
 ) {
+    val chatroomDtoKey = stringPreferencesKey("chatroom_dto")
+    val userDtoKey = stringPreferencesKey("user_dto")
+    val sectionDtoKey = stringPreferencesKey("section_dto")
+
+    val gson = Gson()
+    val retrofit = Retrofit.Builder()
+        .baseUrl("http://10.0.2.2:8080/") // URL backend-a
+        .addConverterFactory(GsonConverterFactory.create())
+        .build()
+    val quizApi = retrofit.create(QuizApiService::class.java)
+    var userDto by remember { mutableStateOf<UserDto?>(null) }
+    var chatroomDto by remember { mutableStateOf<ChatroomDto?>(null) }
+//    var userDto: UserDto
+//    var chatroomDto: ChatroomDto
+//    var sectionDto: CategoryDto
+
+    LaunchedEffect(Unit) {
+        // dohvatamo userDto
+        val userDtoJson = dataStore.data.map { preferences ->
+            preferences[userDtoKey]
+        }.firstOrNull()
+        userDtoJson?.let { json ->
+            userDto = gson.fromJson(json, UserDto::class.java)
+            Log.d("userDto: ", userDto.toString())
+        }
+
+        // dohvatamo chatroomDto
+        val chatroomDtoJson = dataStore.data.map { preferences ->
+            preferences[chatroomDtoKey]
+        }.firstOrNull()
+        chatroomDtoJson?.let { json ->
+            chatroomDto = gson.fromJson(json, ChatroomDto::class.java)
+            Log.d("chatroomDto: ", chatroomDto.toString())
+        }
+
+        // dohvatamo sectionDto
+//        val sectionDtoJson = dataStore.data.map { preferences ->
+//            preferences[sectionDtoKey]
+//        }.firstOrNull()
+//        sectionDtoJson?.let { json ->
+//            sectionDto = gson.fromJson(json, CategoryDto::class.java)
+//        }
+    }
+
     var messageText by remember { mutableStateOf(TextFieldValue("")) }
     val messages = listOf(
         Message("Hi, how are you?", isUser = false),
@@ -60,7 +132,8 @@ fun ChatScreen(
                     IconButton(onClick = { /* Leave chatroom action */ }) {
                         Icon(Icons.Default.ExitToApp, contentDescription = "Leave", tint = Color.White)
                     }
-                    IconButton(onClick = { navController.navigate("quiz") }) {
+//                    IconButton(onClick = { navController.navigate("quiz") }) {
+                    IconButton(onClick = { navController.navigate(ChoseCategoryDest.createRoute(chatroomId = chatroomDto?.chatroomId ?: 1, userId = userDto?.userid ?: 1)) }) {
                         Icon(Icons.Default.PlayArrow, contentDescription = "Join Quiz", tint = Color.White)
                     }
                 }
@@ -147,7 +220,12 @@ fun MessageItem(message: Message) {
 data class Message(val text: String, val isUser: Boolean)
 
 @Composable
-fun QuizContent(navController: NavHostController) {
+fun QuizContent(
+    navController: NavHostController,
+    chatroomId: Int,
+    categoryId: Int,
+    userId: Int
+) {
 
     val retrofit = Retrofit.Builder()
         .baseUrl("http://10.0.2.2:8080/") // URL backend-a
@@ -161,7 +239,15 @@ fun QuizContent(navController: NavHostController) {
 
     // Fetch quiz questions when the composable is first shown
     LaunchedEffect(Unit) {
-        fetchQuizQuestions(quizApi = quizApi) { result, error ->
+        Log.d("userId: ", userId.toString())
+        Log.d("chatroomId: ", chatroomId.toString())
+        Log.d("categoryId: ", categoryId.toString())
+        fetchQuizQuestions(
+            quizApi = quizApi,
+            chatroomId = chatroomId,
+            categoryId = categoryId,
+            userId = userId
+        ) { result, error ->
             questions = result
             errorMessage = error
         }
@@ -170,7 +256,7 @@ fun QuizContent(navController: NavHostController) {
     // Display either the quiz questions or an error message
     when {
         questions != null -> {
-            displayQuizQuestions(navController, questions!!)
+            displayQuizQuestions(navController, questions!!, categoryId)
         }
         errorMessage != null -> {
             // You can customize this UI as needed
@@ -184,11 +270,17 @@ fun QuizContent(navController: NavHostController) {
 
 fun fetchQuizQuestions(
     quizApi: QuizApiService,
+    chatroomId: Int,
+    categoryId: Int,
+    userId: Int,
     onResult: (List<QuestionDto>?, String?) -> Unit,
 ) {
     CoroutineScope(Dispatchers.IO).launch {
+        Log.d("userId: ", userId.toString())
+        Log.d("chatroomId: ", chatroomId.toString())
+        Log.d("categoryId: ", categoryId.toString())
         try {
-            val response = quizApi.getQuizQuestions()
+            val response = quizApi.getQuizQuestions(chatroomId.toInt(), categoryId.toInt(), userId.toInt())
 
             withContext(Dispatchers.Main) {
                 if (response.isValid) {
@@ -222,13 +314,14 @@ fun fetchQuizQuestions(
 //    }
 //}
 @Composable
-fun displayQuizQuestions(navController: NavHostController, questions: List<QuestionDto>) {
+fun displayQuizQuestions(navController: NavHostController, questions: List<QuestionDto>, categoryId: Int) {
     var currentQuestionIndex by remember { mutableStateOf(0) }
     var correctAnswers by remember { mutableStateOf(0) }  // Dodajemo promenljivu za praćenje broja tačnih odgovora
     val randomImages = remember { generateRandomImages() }
     if (questions.isNotEmpty()) {
 
         QuizScreen(
+//        ChoseCategoryScreen(
             currentQuestionIndex = currentQuestionIndex,
             totalQuestions = questions.size,
             question = questions[currentQuestionIndex].questions,
@@ -236,7 +329,7 @@ fun displayQuizQuestions(navController: NavHostController, questions: List<Quest
             //imageResource = R.drawable.background_login, // Ako koristiš resurs slike
             options = questions[currentQuestionIndex].answersDto.map { it.answer },
             correctAnswer = questions[currentQuestionIndex].answersDto.find { it.isCorrect }?.answer ?: "",
-            onNextQuestion = {selectedOption ->
+            onNextQuestion = { selectedOption ->
                 if (questions[currentQuestionIndex].answersDto.find { it.isCorrect }?.answer == selectedOption) {
                     Log.d("Quiz", "Correct Answer: $correctAnswers")
                     correctAnswers++  // Ažuriramo broj tačnih odgovora
@@ -253,7 +346,8 @@ fun displayQuizQuestions(navController: NavHostController, questions: List<Quest
                         }
                     }
                 }
-            }
+            },
+            categoryId = categoryId
         )
     }
 }

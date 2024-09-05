@@ -3,8 +3,9 @@ package com.example.kviz
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.AccountBox
 import androidx.compose.material.icons.filled.AccountCircle
-import androidx.compose.material.icons.filled.Face
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.MailOutline
 import androidx.compose.material.icons.filled.Send
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -19,13 +20,9 @@ object ChatRoomsDest : SnippetDestination {
     override val route = "chat_rooms"
 
     fun createRoute(userId: Int): String {
-        return "chat_rooms/$Int"
+//        return "chat_rooms/$Int"
+        return "chat_rooms/$userId"
     }
-}
-
-object AddQuestionDest : SnippetDestination {
-    override val icon = Icons.Default.Face
-    override val route = "add_question"
 }
 
 object ProfileDest : SnippetDestination {
@@ -53,7 +50,7 @@ object SectionsDest : SnippetDestination {
 }
 
 object AllQuestionsDest : SnippetDestination {
-    override val icon = Icons.Default.AccountBox
+    override val icon = Icons.Default.Delete
     override val route = "all_questions/{sectionId}"
 
     fun createRoute(sectionId: String): String {
@@ -63,7 +60,7 @@ object AllQuestionsDest : SnippetDestination {
 
 object QuizDest : SnippetDestination {
     override val icon = Icons.Default.Info
-    override val route = "quiz"
+    override val route = "quiz/{chatroomId}/{categoryId}/{userId}"
 }
 
 object ResultDest : SnippetDestination {
@@ -72,6 +69,15 @@ object ResultDest : SnippetDestination {
 
     fun createRoute(result: Int): String {
         return "result/$result"
+    }
+}
+
+object ChoseCategoryDest : SnippetDestination {
+    override val icon = Icons.Default.List
+    override val route = "chose_category/{chatroomId}/{userId}"
+
+    fun createRoute(chatroomId: Int, userId: Int): String {
+        return "chose_category/$chatroomId/$userId"
     }
 }
 

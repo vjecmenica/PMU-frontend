@@ -6,3 +6,13 @@ data class ChatroomDto(
     val owner: UserDto
 )
 
+data class CategoryDto(
+    val sectionId: Int,
+    val name: String,
+    val numOfQuestions: Int
+)
+
+data class CategoryDtoScreen(
+    val sectionDto: CategoryDto,
+    val numOfQuestions: Int,
+)

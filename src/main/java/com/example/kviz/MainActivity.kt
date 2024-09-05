@@ -9,6 +9,7 @@ import android.content.Context
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.BottomAppBar
@@ -26,6 +27,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -38,14 +41,16 @@ import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.kviz.composable.ChatRoomsScreen
 import com.example.kviz.composable.ChatScreen
+import com.example.kviz.composable.ChoseCategoryScreen
 import com.example.kviz.composable.LeaderboardScreen
+import com.example.kviz.composable.ProfileScreenOrigin
 import com.example.kviz.composable.QuizContent
 import com.example.kviz.composable.ResultScreen
+import com.example.kviz.composable.SectionScreenOrigin
 import com.example.kviz.composable.SignInSignUpScreen1
 import com.example.kviz.composable.SplashScreen
 import com.example.kviz.ui.theme.KvizTheme
 import com.example.vezbazak1.composable.SectionDetailsScreen
-import com.example.vezbazak1.composable.SectionsScreen
 
 class MainActivity : ComponentActivity() {
     val Context.dataStore: DataStore<Preferences> by preferencesDataStore(name = "settings")
@@ -89,16 +94,53 @@ class MainActivity : ComponentActivity() {
                                     currentDestination?.route == SectionsDest.route ||
                                     currentDestination?.route == ProfileDest.route
                                 ) {
-                                    BottomAppBar(containerColor = Color(0xFFFFB183)) { // Narandzasta boja
+                                    BottomAppBar(containerColor = Color(0xFFB995FF/*0xFFFFB183*/)) { // Narandzasta boja
                                         destinations.forEach { navDestination ->
                                             NavigationBarItem(
                                                 icon = {
-                                                    Icon(
-                                                        imageVector = navDestination.icon,
-                                                        contentDescription = null,
-                                                    )
+                                                    if (navDestination.route == ChatRoomsDest.route) {
+                                                        Image(
+                                                            painter = painterResource(id = R.drawable.chat_bubble),
+                                                            contentDescription = "Nav bar icon",
+//                                                            modifier = Modifier
+//                                                                .fillMaxWidth()
+//                                                                .height(200.dp),
+                                                            contentScale = ContentScale.Fit
+                                                        )
+                                                    } else if (navDestination.route == SectionsDest.route) {
+                                                        Image(
+                                                            painter = painterResource(id = R.drawable.categories_icon),
+                                                            contentDescription = "Nav bar icon",
+//                                                            modifier = Modifier
+//                                                                .fillMaxWidth()
+//                                                                .height(200.dp),
+                                                            contentScale = ContentScale.Fit
+                                                        )
+                                                    } else if (navDestination.route == ProfileDest.route) {
+                                                        Image(
+                                                            painter = painterResource(id = R.drawable.profile_icon),
+                                                            contentDescription = "Nav bar icon",
+//                                                            modifier = Modifier
+//                                                                .fillMaxWidth()
+//                                                                .height(200.dp),
+                                                            contentScale = ContentScale.Fit
+                                                        )
+                                                    } else {
+                                                        Icon(
+                                                            imageVector = navDestination.icon,
+                                                            contentDescription = null,
+                                                        )
+                                                    }
                                                 },
-                                                label = { Text(text = navDestination.route) },
+                                                label = {
+                                                    if (navDestination.route == ChatRoomsDest.route) {
+                                                        Text(text = "Chat rooms")
+                                                    } else if (navDestination.route == SectionsDest.route) {
+                                                        Text(text = "Sections")
+                                                    } else {
+                                                        Text(text = "Profile")
+                                                    }
+                                                },
                                                 selected = currentRoute.startsWith(navDestination.route),
                                                 onClick = {
                                                     val newRoute = navDestination.route
@@ -128,17 +170,17 @@ class MainActivity : ComponentActivity() {
                                 }
 
                                 composable(route = SectionsDest.route) {
-                                    SectionsScreen(navController)
+                                    SectionScreenOrigin(navController, dataStore)
                                 }
                                 composable(route = ProfileDest.route) {
-                                    LeaderboardScreen(navController)
+                                    ProfileScreenOrigin(navController)
                                 }
                                 composable(
                                     route = ChatDest.route,
                                     arguments = listOf(navArgument("chatName") { type = NavType.StringType })
                                 ) { backStackEntry ->
                                     val chatName = backStackEntry.arguments?.getString("chatName")
-                                    ChatScreen(navController = navController, chatRoomName = chatName ?: "")
+                                    ChatScreen(navController = navController, chatRoomName = chatName ?: "", dataStore = dataStore)
                                 }
                                 composable(route = LoginDest.route) {
                                     SignInSignUpScreen1(navController, dataStore)
@@ -150,8 +192,18 @@ class MainActivity : ComponentActivity() {
                                     val sectionId = backStackEntry.arguments?.getString("sectionId")
                                     SectionDetailsScreen(navController = navController, sectionId = sectionId ?: "")
                                 }
-                                composable(route = QuizDest.route ) {
-                                    QuizContent(navController = navController)
+                                composable(
+                                    route = QuizDest.route,
+                                    arguments = listOf(
+                                        navArgument("chatroomId") { type = NavType.IntType },
+                                        navArgument("categoryId") { type = NavType.IntType },
+                                        navArgument("userId") { type = NavType.IntType },
+                                    )
+                                ) { backStackEntry ->
+                                    val chatroomId = backStackEntry.arguments?.getInt("chatroomId")
+                                    val categoryId = backStackEntry.arguments?.getInt("categoryId")
+                                    val userId = backStackEntry.arguments?.getInt("userId")
+                                    QuizContent(navController = navController, chatroomId = chatroomId ?: 1, userId = userId ?: 1, categoryId = categoryId ?: 1)
                                 }
                                 composable(
                                     route = ResultDest.route,
@@ -159,6 +211,17 @@ class MainActivity : ComponentActivity() {
                                 ) { backStackEntry ->
                                     val result = backStackEntry.arguments?.getInt("result")
                                     ResultScreen(points = result ?: 0,navController, {}, {})
+                                }
+                                composable(
+                                    route = ChoseCategoryDest.route,
+                                    arguments = listOf(
+                                        navArgument("chatroomId") { type = NavType.IntType },
+                                        navArgument("userId") { type = NavType.IntType },
+                                    )
+                                ) { backStackEntry ->
+                                    val chatroomId = backStackEntry.arguments?.getInt("chatroomId")
+                                    val userId = backStackEntry.arguments?.getInt("userId")
+                                    ChoseCategoryScreen(navController = navController, chatroomId = chatroomId ?: 1, userId = userId ?: 1)
                                 }
                             }
                         }

@@ -312,7 +312,8 @@ fun QuizScreen(
     imageResource: Int,
     options: List<String>,
     correctAnswer: String,
-    onNextQuestion: (String) -> Unit
+    onNextQuestion: (String) -> Unit,
+    categoryId: Int
 ) {
     var selectedOption by remember { mutableStateOf<String?>(null) }
     var isAnswerCorrect by remember { mutableStateOf<Boolean?>(null) }

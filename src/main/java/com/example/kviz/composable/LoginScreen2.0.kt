@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
@@ -55,16 +56,19 @@ import retrofit2.converter.gson.GsonConverterFactory
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SignInForm(
+    message: String,
     onSignIn: (String, String) -> Unit
 ) {
-    var email by remember { mutableStateOf("") }
+    var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+
+    var message by remember { mutableStateOf("") }
 
     // Sign In Form Fields
     TextField(
-        value = email,
-        onValueChange = { email = it },
-        label = { Text(text = "Email") },
+        value = username,
+        onValueChange = { username = it },
+        label = { Text(text = "Username") },
         modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp))
@@ -78,13 +82,27 @@ fun SignInForm(
         modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp))
-            .padding(8.dp)
+            .padding(8.dp),
+        visualTransformation = PasswordVisualTransformation()
     )
-    Spacer(modifier = Modifier.height(16.dp))
+
+    // Display validation error message if needed
+    if (message.isNotEmpty()) {
+        Text(
+            text = message,
+            color = Color.Red,
+            modifier = Modifier.padding(8.dp)
+        )
+    } else {
+        Spacer(modifier = Modifier.height(16.dp))
+    }
 
     Button(
-        onClick = { onSignIn(email, password) },
-        modifier = Modifier.fillMaxWidth()
+        onClick = { onSignIn(username, password) },
+        modifier = Modifier.fillMaxWidth(),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color(0xFFFFB183)
+        )
     ) {
         Text(text = "Sign In")
     }
@@ -97,10 +115,19 @@ fun SignUpForm(
 ) {
     var firstName by remember { mutableStateOf("") }
     var lastName by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
+    var username by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
+    var passwordConfirmation by remember { mutableStateOf("") }
 
-    // Sign Up Form Fields
+    var message by remember { mutableStateOf("") }
+
+    fun isPasswordValid(password: String): Boolean {
+        val hasLetter = password.any { it.isLetter() }
+        val hasDigit = password.any { it.isDigit() }
+        val isValidLength = password.length >= 6
+        return hasLetter && hasDigit && isValidLength
+    }
+
     TextField(
         value = firstName,
         onValueChange = { firstName = it },
@@ -122,9 +149,9 @@ fun SignUpForm(
     )
     Spacer(modifier = Modifier.height(8.dp))
     TextField(
-        value = email,
-        onValueChange = { email = it },
-        label = { Text(text = "Email") },
+        value = username,
+        onValueChange = { username = it },
+        label = { Text(text = "Username") },
         modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp))
@@ -138,13 +165,51 @@ fun SignUpForm(
         modifier = Modifier
             .fillMaxWidth()
             .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp))
-            .padding(8.dp)
+            .padding(8.dp),
+        visualTransformation = PasswordVisualTransformation()
     )
-    Spacer(modifier = Modifier.height(16.dp))
+    Spacer(modifier = Modifier.height(8.dp))
+    TextField(
+        value = password,
+        onValueChange = { password = it },
+        label = { Text(text = "Confirm password") },
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(MaterialTheme.colorScheme.surface, RoundedCornerShape(8.dp))
+            .padding(8.dp),
+        visualTransformation = PasswordVisualTransformation()
+    )
+
+    // Display validation error message if needed
+    if (message.isNotEmpty()) {
+        Text(
+            text = message,
+            color = Color.Red,
+            modifier = Modifier.padding(8.dp)
+        )
+    } else {
+        Spacer(modifier = Modifier.height(16.dp))
+    }
 
     Button(
-        onClick = { onSignUp(firstName, lastName, email, password) },
-        modifier = Modifier.fillMaxWidth()
+        onClick = {
+            if (firstName == "" || lastName == "" || username == "" || password == "") {
+                message = "All fields are required!"
+                return@Button
+            }
+            if (password != passwordConfirmation) {
+                message = "Password and Confirm password fields must be the same!"
+            }
+            if (!isPasswordValid(password)) {
+                message = "Password must have mininum of 6 caracters, including one letter and one number!"
+                return@Button
+            }
+            onSignUp(firstName, lastName, username, password)
+        },
+        modifier = Modifier.fillMaxWidth(),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color(0xFFFFB183)
+        )
     ) {
         Text(text = "Sign Up")
     }
@@ -164,6 +229,8 @@ fun SignInSignUpScreen1(
 
     // State to track which button is selected
     var isSignIn by remember { mutableStateOf(true) }
+
+    var message by remember { mutableStateOf("") }
 
     // Background Image
     Box(
@@ -201,7 +268,7 @@ fun SignInSignUpScreen1(
                     Button(
                         onClick = { isSignIn = true },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (isSignIn) MaterialTheme.colorScheme.primary else Color.Transparent
+                            containerColor = if (isSignIn) Color(0xFFB995FF)/*MaterialTheme.colorScheme.primary*/ else Color.Transparent
                         ),
                         modifier = Modifier
                             .weight(1f)
@@ -210,14 +277,14 @@ fun SignInSignUpScreen1(
                         Text(
                             text = "Sign In",
                             color = if (isSignIn) Color.White else Color.Gray,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.ExtraBold
                         )
                     }
 
                     Button(
                         onClick = { isSignIn = false },
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = if (!isSignIn) MaterialTheme.colorScheme.primary else Color.Transparent
+                            containerColor = if (!isSignIn) Color(0xFFB995FF)/*MaterialTheme.colorScheme.primary*/ else Color.Transparent
                         ),
                         modifier = Modifier
                             .weight(1f)
@@ -226,7 +293,7 @@ fun SignInSignUpScreen1(
                         Text(
                             text = "Sign Up",
                             color = if (!isSignIn) Color.White else Color.Gray,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.ExtraBold
                         )
                     }
                 }
@@ -235,7 +302,7 @@ fun SignInSignUpScreen1(
 
                 // Form Fields and Button Actions
                 if (isSignIn) {
-                    SignInForm { email, password ->
+                    SignInForm(message) { email, password ->
                         CoroutineScope(Dispatchers.IO).launch {
                             try {
                                 val response = userApi.authenticateUser(
@@ -261,7 +328,7 @@ fun SignInSignUpScreen1(
                                         }.apply {  }
                                         navController.navigate(ChatRoomsDest.route)
                                     } else {
-                                        // Handle error (e.g., show a Toast or Snackbar)
+                                        // Hange error
                                     }
                                 }
                             } catch (e: Exception) {
@@ -269,6 +336,18 @@ fun SignInSignUpScreen1(
                             }
                         }
                     }
+
+                    // Display validation error message if needed
+//                    if (message.isNotEmpty()) {
+//                        Text(
+//                            text = message,
+//                            color = Color.Red,
+//                            modifier = Modifier.padding(8.dp)
+//                        )
+//                    } else {
+//                        Spacer(modifier = Modifier.height(16.dp))
+//                    }
+
                 } else {
                     SignUpForm { firstName, lastName, email, password ->
                         CoroutineScope(Dispatchers.IO).launch {

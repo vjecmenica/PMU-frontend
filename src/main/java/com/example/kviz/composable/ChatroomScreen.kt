@@ -3,11 +3,19 @@ package com.example.kviz.composable
 import android.util.Log
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.KeyboardArrowRight
@@ -37,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.navigation.NavHostController
 import com.example.kviz.ChatDest
@@ -126,7 +135,7 @@ fun ChatRoomsScreen(
                     .padding(paddingValues) // Dodaj padding iz Scaffold-a
             ) {
                 items(chatRooms) { chatRoom ->
-                    ChatRoomItem(navController, chatRoom.name)
+                    ChatRoomItem(navController, chatRoom,  dataStore)
                 }
             }
         }
@@ -206,7 +215,8 @@ fun ChatRoomsScreen(
 @Composable
 fun ChatRoomItem(
     navController: NavHostController,
-    chatRoomName: String
+    chatroomDto: ChatroomDto,
+    dataStore: DataStore<Preferences>
 ) {
     Row(
         modifier = Modifier
@@ -222,10 +232,21 @@ fun ChatRoomItem(
                 .clip(CircleShape)
         )
         Spacer(modifier = Modifier.width(16.dp))
-        Text(text = chatRoomName, color = Color.White, fontSize = 18.sp)
+        Text(text = chatroomDto.name, color = Color.White, fontSize = 18.sp)
         Spacer(modifier = Modifier.weight(1f))
         Button(onClick = {
-            navController.navigate(ChatDest.createRoute(chatRoomName))
+            CoroutineScope(Dispatchers.IO).launch {
+                withContext(Dispatchers.Main) {
+                    val gson = Gson()
+                    val chatroomDtoKey = stringPreferencesKey("chatroom_dto")
+                    val chatroomDtoJson = gson.toJson(chatroomDto)
+
+                    dataStore.edit { preferences ->
+                        preferences[chatroomDtoKey] = chatroomDtoJson
+                    }.apply { }
+                    navController.navigate(ChatDest.createRoute(chatroomDto.name))
+                }
+            }
         }) {
             Icon(Icons.Filled.KeyboardArrowRight, contentDescription = "Enter")
         }
